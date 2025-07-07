@@ -13,6 +13,8 @@ export default function CertificationList() {
   const [selectedMonth, setSelectedMonth] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const certificatesPerPage = 15;
 
   useEffect(() => {
     fetchCertificates();
@@ -26,15 +28,7 @@ export default function CertificationList() {
       const res = await fetch(API_URL, { headers: { Authorization: `Bearer ${token}` } });
       if (!res.ok) throw new Error('Failed to fetch data');
       const data = await res.json();
-
-      const sorted = data.sort((a, b) => {
-        const dateA = new Date(a.date);
-        const dateB = new Date(b.date);
-        if (dateA < dateB) return 1;
-        if (dateA > dateB) return -1;
-        return b._id.localeCompare(a._id);
-      });
-
+      const sorted = data.sort((a, b) => new Date(b.date) - new Date(a.date) || b._id.localeCompare(a._id));
       setCertifications(sorted);
     } catch (err) {
       console.error(err);
@@ -90,10 +84,35 @@ export default function CertificationList() {
     );
   });
 
+  // Pagination Logic
+  const indexOfLast = currentPage * certificatesPerPage;
+  const indexOfFirst = indexOfLast - certificatesPerPage;
+  const currentCerts = filteredCertifications.slice(indexOfFirst, indexOfLast);
+  const totalPages = Math.ceil(filteredCertifications.length / certificatesPerPage);
+
+  const Pagination = () => (
+    <div className="flex justify-center mt-4 gap-2">
+      <button
+        onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+        disabled={currentPage === 1}
+        className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
+      >
+        Prev
+      </button>
+      <span className="px-3 py-1 font-semibold">{currentPage} / {totalPages}</span>
+      <button
+        onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+        disabled={currentPage === totalPages}
+        className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
+      >
+        Next
+      </button>
+    </div>
+  );
+
   return (
     <div className="p-6 bg-white rounded-lg shadow-sm">
       <ToastContainer position="top-right" autoClose={3000} />
-
       {/* Filters */}
       <div className="flex flex-col sm:flex-row sm:flex-wrap gap-4 mb-4">
         <input
@@ -103,7 +122,6 @@ export default function CertificationList() {
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
-
         <div className="relative w-full sm:w-40">
           <select
             className="border px-3 py-2 rounded w-full pr-8 appearance-none font-semibold"
@@ -121,14 +139,12 @@ export default function CertificationList() {
             <FaCalendarAlt size={14} />
           </div>
         </div>
-
         <input
           type="date"
           className="border px-3 py-2 rounded w-full sm:w-44 font-semibold"
           value={selectedDate}
           onChange={(e) => setSelectedDate(e.target.value)}
         />
-
         <div className="relative w-full sm:w-48">
           <select
             className="border px-3 py-2 rounded w-full pr-8 appearance-none font-semibold"
@@ -148,32 +164,28 @@ export default function CertificationList() {
 
       {/* Desktop */}
       <div className="hidden sm:block">
-        {filteredCertifications.length === 0 ? (
+        {currentCerts.length === 0 ? (
           <p className="text-gray-500 font-semibold text-center">No certifications found.</p>
         ) : (
           <table className="min-w-full divide-y divide-gray-200 text-sm">
             <thead className="bg-indigo-100">
               <tr>
-                <th className="px-4 py-3 text-left text-indigo-700 font-bold">Unit Name</th>
-                <th className="px-4 py-3 text-left text-indigo-700 font-bold">ZEDMSME</th>
-                <th className="px-4 py-3 text-left text-indigo-700 font-bold">Password</th>
-                <th className="px-4 py-3 text-left text-indigo-700 font-bold">Date</th>
-                <th className="px-4 py-3 text-left text-indigo-700 font-bold">Status</th>
-                <th className="px-4 py-3 text-left text-indigo-700 font-bold">Update</th>
+                <th className="px-5 py-3 text-left text-indigo-700 font-bold">Unit Name</th>
+                <th className="px-9 py-3 text-left text-indigo-700 font-bold">ZEDMSME</th>
+                <th className="px-2 py-3 text-left text-indigo-700 font-bold">Password</th>
+                <th className="px-6 py-3 text-left text-indigo-700 font-bold">Date</th>
+                <th className="px-16 py-3 text-left text-indigo-700 font-bold">Status</th>
+                <th className="px-2 py-3 text-left text-indigo-700 font-bold">Update</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {filteredCertifications.map((cert) => (
+              {currentCerts.map((cert) => (
                 <tr
                   key={cert._id}
                   className={`hover:bg-indigo-50 transition ${
-                    cert.status === 'Bronze Certified'
-                      ? 'bg-yellow-50'
-                      : cert.status === 'NC Raised'
-                      ? 'bg-red-50'
-                      : cert.status === 'Reject'
-                      ? 'bg-gray-200'
-                      : 'bg-white'
+                    cert.status === 'Bronze Certified' ? 'bg-yellow-50' :
+                    cert.status === 'NC Raised' ? 'bg-red-50' :
+                    cert.status === 'Reject' ? 'bg-gray-200' : 'bg-white'
                   }`}
                 >
                   <td className="px-4 py-3 font-semibold text-gray-800">{cert.unitName}</td>
@@ -196,9 +208,7 @@ export default function CertificationList() {
                     <button
                       onClick={() => handleUpdate(cert._id)}
                       className={`${
-                        updating[cert._id]
-                          ? 'bg-gray-400 cursor-not-allowed'
-                          : 'bg-indigo-600 hover:bg-indigo-700'
+                        updating[cert._id] ? 'bg-gray-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'
                       } text-white p-2 rounded-full shadow transition`}
                       disabled={updating[cert._id]}
                     >
@@ -210,24 +220,21 @@ export default function CertificationList() {
             </tbody>
           </table>
         )}
+        <Pagination />
       </div>
 
       {/* Mobile */}
       <div className="sm:hidden space-y-4">
-        {filteredCertifications.length === 0 ? (
+        {currentCerts.length === 0 ? (
           <p className="text-gray-500 font-semibold text-center">No certifications found.</p>
         ) : (
-          filteredCertifications.map((cert) => (
+          currentCerts.map((cert) => (
             <div
               key={cert._id}
               className={`shadow-md rounded-lg p-4 space-y-2 ${
-                cert.status === 'Bronze Certified'
-                  ? 'bg-yellow-50'
-                  : cert.status === 'NC Raised'
-                  ? 'bg-red-50'
-                  : cert.status === 'Reject'
-                  ? 'bg-gray-200'
-                  : 'bg-white'
+                cert.status === 'Bronze Certified' ? 'bg-yellow-50' :
+                cert.status === 'NC Raised' ? 'bg-red-50' :
+                cert.status === 'Reject' ? 'bg-gray-200' : 'bg-white'
               }`}
             >
               <div className="flex justify-between items-center">
@@ -263,11 +270,11 @@ export default function CertificationList() {
             </div>
           ))
         )}
+        <Pagination />
       </div>
     </div>
   );
 }
-
 
 
 

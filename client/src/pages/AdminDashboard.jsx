@@ -1,13 +1,16 @@
 import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
+import Sidebar from '../components/Sidebar';
+import { FaTachometerAlt, FaUsers, FaBars } from 'react-icons/fa';
 
 export default function AdminDashboard() {
   const [users, setUsers] = useState([]);
-  const [activeMainTab, setActiveMainTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState('dashboard');
   const [activeUserTab, setActiveUserTab] = useState('unverified');
   const [newUserCount, setNewUserCount] = useState(0);
   const [animateBadge, setAnimateBadge] = useState(false);
-  const [deleteUserId, setDeleteUserId] = useState(null); // for modal
+  const [deleteUserId, setDeleteUserId] = useState(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const token = localStorage.getItem('token');
   const currentUser = JSON.parse(localStorage.getItem('user'));
@@ -20,7 +23,7 @@ export default function AdminDashboard() {
       });
       const filteredUsers = res.data.filter((u) => u.role !== 'admin');
       setUsers(filteredUsers);
-      const unverified = filteredUsers.filter(u => !u.isVerified).length;
+      const unverified = filteredUsers.filter((u) => !u.isVerified).length;
       setNewUserCount(unverified);
     } catch (err) {
       console.error('Error fetching users:', err);
@@ -29,7 +32,6 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetchUsers();
-
     const eventSource = new EventSource('/api/users/events');
 
     eventSource.onmessage = (event) => {
@@ -46,10 +48,7 @@ export default function AdminDashboard() {
       }
     };
 
-    eventSource.onerror = () => {
-      console.error('SSE connection error, closing...');
-      eventSource.close();
-    };
+    eventSource.onerror = () => eventSource.close();
 
     return () => eventSource.close();
   }, []);
@@ -67,145 +66,133 @@ export default function AdminDashboard() {
     }
   };
 
-  const confirmDeleteUser = (id) => {
-    setDeleteUserId(id);
-  };
-
-  const handleDeleteUser = async () => {
-    if (!deleteUserId) return;
-    try {
-      await axios.delete(`/api/auth/delete-user/${deleteUserId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      fetchUsers();
-      setDeleteUserId(null);
-    } catch (err) {
-      console.error('Error deleting user:', err);
-      setDeleteUserId(null);
-    }
-  };
-
-  const handleCancelDelete = () => {
-    setDeleteUserId(null);
-  };
-
   const handleLogout = () => {
     localStorage.clear();
     window.location.href = '/login';
   };
 
-  const filteredUsers = users.filter(
-    (u) => u.isVerified === (activeUserTab === 'verified')
-  );
+  const filteredUsers = users.filter((u) => u.isVerified === (activeUserTab === 'verified'));
 
   return (
-    <div className="min-h-screen bg-gray-100 p-4 sm:p-6">
+    <div className="min-h-screen flex flex-col">
       <audio ref={audioRef} src="/sounds/bell.wav" preload="auto" />
 
-      <div className="max-w-7xl mx-auto bg-white rounded-lg shadow-md p-4 sm:p-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4 sm:gap-0">
-          <h1 className="text-xl sm:text-2xl font-bold text-indigo-600">
-            Admin Dashboard
-          </h1>
-          <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 items-start sm:items-center">
-            <span className="text-xs sm:text-sm text-gray-600 break-all sm:inline hidden max-w-[200px]">
-              {currentUser?.email}
-            </span>
-            <button
-              onClick={handleLogout}
-              className="bg-red-500 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded hover:bg-red-600 text-xs sm:text-sm whitespace-nowrap"
-            >
-              Logout
-            </button>
-          </div>
+      {/* Mobile header with toggle button */}
+      <div className="sm:hidden bg-indigo-600 text-white flex items-center justify-between px-4 py-3">
+        <div className="font-bold text-lg">
+          {activeTab === 'dashboard' ? 'Admin Dashboard' : 'User Management'}
         </div>
+        <button
+          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          aria-label="Toggle menu"
+          className="focus:outline-none"
+        >
+          <FaBars size={24} />
+        </button>
+      </div>
 
-        {/* Main Tabs */}
-        <div className="flex flex-wrap sm:flex-nowrap space-x-0 sm:space-x-6 mb-4 border-b pb-2 gap-2 sm:gap-0">
-          <button
-            onClick={() => setActiveMainTab('dashboard')}
-            className={`relative px-3 sm:px-4 py-2 font-medium transition rounded-t ${
-              activeMainTab === 'dashboard'
-                ? 'border-b-2 border-indigo-600 text-indigo-600'
-                : 'text-gray-600 hover:text-indigo-500'
-            }`}
-          >
-            Dashboard
-          </button>
-          <button
-            onClick={() => setActiveMainTab('users')}
-            className={`relative px-3 sm:px-4 py-2 font-medium transition rounded-t flex items-center ${
-              activeMainTab === 'users'
-                ? 'border-b-2 border-indigo-600 text-indigo-600'
-                : 'text-gray-600 hover:text-indigo-500'
-            }`}
-          >
-            Users
-            {newUserCount > 0 && (
-              <span
-                className={`ml-2 inline-block bg-red-500 text-white text-xs font-semibold px-2 py-0.5 rounded-full transition-transform ${
-                  animateBadge ? 'animate-ping' : ''
-                }`}
-                title={`${newUserCount} new unverified user(s)`}
-              >
-                {newUserCount}
-              </span>
-            )}
-          </button>
-        </div>
-
-        {/* User Sub Tabs */}
-        {activeMainTab === 'users' && (
-          <>
-            <div className="flex flex-wrap gap-3 mb-4">
+      <div className="flex flex-1">
+        <Sidebar
+          activeTab={activeTab}
+          setActiveTab={(tab) => {
+            setActiveTab(tab);
+            setIsSidebarOpen(false); // close sidebar on mobile when tab clicked
+          }}
+          isOpen={isSidebarOpen}
+          setIsOpen={setIsSidebarOpen}
+          menuItems={[
+            { key: 'dashboard', icon: FaTachometerAlt, label: 'Dashboard' },
+            {
+              key: 'users',
+              icon: FaUsers,
+              label: (
+                <div className="relative flex items-center">
+                  Users
+                  {newUserCount > 0 && (
+                    <span
+                      className={`ml-2 inline-block bg-red-500 text-white text-xs font-semibold px-2 py-0.5 rounded-full transition-transform ${
+                        animateBadge ? 'animate-ping' : ''
+                      }`}
+                      title={`${newUserCount} new unverified user(s)`}
+                    >
+                      {newUserCount}
+                    </span>
+                  )}
+                </div>
+              ),
+            },
+          ]}
+          footer={
+            <div className="mt-auto text-center text-white text-sm space-y-2">
+              <p className="break-all px-2">{currentUser?.email}</p>
               <button
-                onClick={() => setActiveUserTab('unverified')}
-                className={`px-4 py-2 rounded-full text-xs sm:text-sm font-semibold shadow ${
-                  activeUserTab === 'unverified'
-                    ? 'bg-yellow-500 text-white'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                }`}
+                onClick={handleLogout}
+                className="bg-red-500 px-3 py-1 rounded hover:bg-red-600 text-sm"
               >
-                Unverified
-              </button>
-              <button
-                onClick={() => setActiveUserTab('verified')}
-                className={`px-4 py-2 rounded-full text-xs sm:text-sm font-semibold shadow ${
-                  activeUserTab === 'verified'
-                    ? 'bg-green-600 text-white'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                }`}
-              >
-                Verified
+                Logout
               </button>
             </div>
+          }
+        />
 
-            {filteredUsers.length === 0 ? (
-              <p className="text-center text-gray-500 text-sm sm:text-base">No users found.</p>
-            ) : (
+        <div className="flex-1 bg-gray-100 p-4 sm:p-6 overflow-auto">
+          {/* On desktop, title is inside main content */}
+          <div className="hidden sm:block bg-white shadow-md rounded-md px-6 py-4 mb-4">
+            <h1 className="text-2xl font-bold text-indigo-600">
+              {activeTab === 'dashboard' ? 'Admin Dashboard' : 'User Management'}
+            </h1>
+          </div>
+
+          {activeTab === 'dashboard' && (
+            <div className="bg-white rounded-lg shadow-md p-4">
+              <p className="text-gray-700 text-sm">Welcome to the admin dashboard.</p>
+            </div>
+          )}
+
+          {activeTab === 'users' && (
+            <div className="bg-white rounded-lg shadow-md p-4 space-y-4">
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setActiveUserTab('unverified')}
+                  className={`px-4 py-2 rounded-full text-xs sm:text-sm font-semibold shadow ${
+                    activeUserTab === 'unverified'
+                      ? 'bg-yellow-500 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  Unverified
+                </button>
+                <button
+                  onClick={() => setActiveUserTab('verified')}
+                  className={`px-4 py-2 rounded-full text-xs sm:text-sm font-semibold shadow ${
+                    activeUserTab === 'verified'
+                      ? 'bg-green-600 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  Verified
+                </button>
+              </div>
+
               <div className="overflow-x-auto">
-                <table className="min-w-full table-auto border-collapse text-xs sm:text-sm">
-                  <thead>
-                    <tr className="bg-gray-100 text-left text-xs sm:text-sm">
-                      <th className="px-3 sm:px-4 py-2 font-medium">Username</th>
-                      <th className="px-3 sm:px-4 py-2 font-medium">Email</th>
-                      <th className="px-3 sm:px-4 py-2 font-medium">ZED ID</th>
-                      <th className="px-3 sm:px-4 py-2 font-medium">Mobile</th>
-                      <th className="px-3 sm:px-4 py-2 font-medium text-center">Status</th>
-                      <th className="px-3 sm:px-4 py-2 font-medium text-center">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
+                {filteredUsers.length === 0 ? (
+                  <p className="text-center text-gray-500 text-sm">No users found.</p>
+                ) : (
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {filteredUsers.map((user) => (
-                      <tr
+                      <div
                         key={user._id}
-                        className="border-b hover:bg-gray-50 transition"
+                        className="bg-gray-50 rounded-lg shadow hover:shadow-md transition p-4 space-y-2"
                       >
-                        <td className="px-3 sm:px-4 py-2">{user.username}</td>
-                        <td className="px-3 sm:px-4 py-2 break-words max-w-[150px]">{user.email}</td>
-                        <td className="px-3 sm:px-4 py-2">{user.zedId || '-'}</td>
-                        <td className="px-3 sm:px-4 py-2">{user.mobile || '-'}</td>
-                        <td className="text-center px-3 sm:px-4 py-2">
+                        <div className="font-semibold text-lg text-indigo-600">{user.username}</div>
+                        <div className="text-sm text-gray-600 break-words">{user.email}</div>
+                        <div className="text-sm">
+                          ZED ID: <span className="font-medium">{user.zedId || '-'}</span>
+                        </div>
+                        <div className="text-sm">
+                          Mobile: <span className="font-medium">{user.mobile || '-'}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
                           <label className="inline-flex relative items-center cursor-pointer">
                             <input
                               type="checkbox"
@@ -213,7 +200,7 @@ export default function AdminDashboard() {
                               checked={user.isVerified}
                               onChange={() => handleToggleVerify(user._id, user.isVerified)}
                             />
-                            <div className="w-10 h-5 bg-gray-300 rounded-full peer-checked:bg-indigo-600 transition-all relative">
+                            <div className="w-10 h-5 bg-gray-300 rounded-full peer-checked:bg-green-500 relative transition">
                               <div
                                 className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-transform ${
                                   user.isVerified ? 'translate-x-5' : ''
@@ -221,51 +208,67 @@ export default function AdminDashboard() {
                               />
                             </div>
                           </label>
-                        </td>
-                        <td className="text-center px-3 sm:px-4 py-2">
                           <button
-                            onClick={() => confirmDeleteUser(user._id)}
-                            className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 text-xs sm:text-sm"
+                            onClick={() => setDeleteUserId(user._id)}
+                            className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 text-xs"
                           >
                             Delete
                           </button>
-                        </td>
-                      </tr>
+                        </div>
+                      </div>
                     ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </>
-        )}
-
-        {/* Delete confirmation modal */}
-        {deleteUserId && (
-          <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
-            <div className="bg-white rounded-lg shadow-lg p-6 max-w-sm w-full">
-              <h2 className="text-lg font-semibold mb-4">Confirm Delete</h2>
-              <p className="mb-6">Are you sure you want to delete this user?</p>
-              <div className="flex justify-end space-x-4">
-                <button
-                  onClick={handleCancelDelete}
-                  className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleDeleteUser}
-                  className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-                >
-                  Delete
-                </button>
+                  </div>
+                )}
               </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
+
+      {deleteUserId && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
+          <div className="bg-white rounded-lg shadow-lg p-6 max-w-sm w-full">
+            <h2 className="text-lg font-semibold mb-4">Confirm Delete</h2>
+            <p className="mb-6">Are you sure you want to delete this user?</p>
+            <div className="flex justify-end space-x-4">
+              <button
+                onClick={() => setDeleteUserId(null)}
+                className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  axios
+                    .delete(`/api/auth/delete-user/${deleteUserId}`, {
+                      headers: { Authorization: `Bearer ${token}` },
+                    })
+                    .then(() => {
+                      fetchUsers();
+                      setDeleteUserId(null);
+                    })
+                    .catch(() => setDeleteUserId(null));
+                }}
+                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
 
 
 
