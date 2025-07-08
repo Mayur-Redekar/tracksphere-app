@@ -5,7 +5,7 @@ import { IoClose } from 'react-icons/io5';
 import { motion } from 'framer-motion';
 import { toast } from 'react-toastify';
 
-export default function UserProfilePanel({ user, token, onClose, darkMode, toggleTheme, handleLogout }) {
+export default function UserProfilePanel({ user, token, onClose, handleLogout }) {
   const [saving, setSaving] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const [userData, setUserData] = useState({
@@ -215,26 +215,7 @@ export default function UserProfilePanel({ user, token, onClose, darkMode, toggl
         </div>
       </div>
 
-      <div className="mt-6 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <span className="text-sm text-gray-800 dark:text-white">Dark Mode</span>
-          <label className="inline-flex relative items-center cursor-pointer">
-            <input
-              type="checkbox"
-              className="sr-only peer"
-              checked={darkMode}
-              onChange={toggleTheme}
-            />
-            <div className="w-10 h-5 bg-gray-300 rounded-full peer-checked:bg-indigo-600 transition-all relative">
-              <div
-                className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-transform ${
-                  darkMode ? 'translate-x-5' : ''
-                }`}
-              />
-            </div>
-          </label>
-        </div>
-
+      <div className="mt-6 flex items-center justify-center">
         <FiLogOut
           onClick={handleLogout}
           className="text-xl text-red-600 dark:text-red-400 cursor-pointer hover:scale-110 transition"

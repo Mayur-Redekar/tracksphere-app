@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function Sidebar({ activeTab, setActiveTab, isOpen, setIsOpen, menuItems = [], footer }) {
+export default function Sidebar({ activeTab, setActiveTab, isOpen, setIsOpen, menuItems = [], footer, email, onLogout }) {
   const handleTabClick = (tab) => {
     setActiveTab(tab);
     setIsOpen(false);
@@ -53,6 +53,19 @@ export default function Sidebar({ activeTab, setActiveTab, isOpen, setIsOpen, me
             {footer}
           </div>
         )}
+
+        {/* Conditionally render email and logout only if props exist */}
+        {(email && onLogout) && (
+          <div className="mt-6 text-center text-white text-sm space-y-2">
+            <p className="break-all">{email}</p>
+            <button
+              onClick={onLogout}
+              className="bg-red-500 px-3 py-1 rounded hover:bg-red-600 text-sm"
+            >
+              Logout
+            </button>
+          </div>
+        )}
       </aside>
 
       {/* Overlay */}
@@ -65,6 +78,8 @@ export default function Sidebar({ activeTab, setActiveTab, isOpen, setIsOpen, me
     </>
   );
 }
+
+
 
 
 

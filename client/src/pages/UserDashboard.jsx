@@ -15,7 +15,6 @@ export default function UserDashboard() {
   const navigate = useNavigate();
 
   const [showProfile, setShowProfile] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const contentRef = useRef();
@@ -31,13 +30,6 @@ export default function UserDashboard() {
       navigate('/login');
     }
   }, [navigate, storedUser, token]);
-
-  const toggleTheme = () => {
-    const newMode = !darkMode;
-    setDarkMode(newMode);
-    localStorage.setItem('theme', newMode ? 'dark' : 'light');
-    document.documentElement.classList.toggle('dark', newMode);
-  };
 
   const handleLogout = () => {
     localStorage.clear();
@@ -63,8 +55,7 @@ export default function UserDashboard() {
   }, [showProfile]);
 
   return (
-    <div className={`relative min-h-screen flex flex-col transition-colors duration-500 ${darkMode ? 'bg-gray-900 text-white' : 'bg-[#f8f9fd] text-gray-900'}`}>
-      
+    <div className="relative min-h-screen flex flex-col transition-colors duration-500">
       {/* Header */}
       <div className={`${showProfile ? 'blur-sm pointer-events-none select-none' : ''}`}>
         <div className="hidden md:flex items-center bg-[#fefefe] shadow px-3 py-2">
@@ -145,8 +136,6 @@ export default function UserDashboard() {
               user={storedUser}
               token={token}
               onClose={() => setShowProfile(false)}
-              darkMode={darkMode}
-              toggleTheme={toggleTheme}
               handleLogout={handleLogout}
             />
           </div>
