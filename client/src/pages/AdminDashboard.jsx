@@ -77,7 +77,7 @@ export default function AdminDashboard() {
     <div className="min-h-screen flex flex-col">
       <audio ref={audioRef} src="/sounds/bell.wav" preload="auto" />
 
-      {/* Mobile header with toggle button */}
+      {/* Mobile header */}
       <div className="sm:hidden bg-indigo-600 text-white flex items-center justify-between px-4 py-3">
         <div className="font-bold text-lg">
           {activeTab === 'dashboard' ? 'Admin Dashboard' : 'User Management'}
@@ -91,12 +91,13 @@ export default function AdminDashboard() {
         </button>
       </div>
 
-      <div className="flex flex-1">
+      {/* Main layout */}
+      <div className="flex flex-1 overflow-hidden">
         <Sidebar
           activeTab={activeTab}
           setActiveTab={(tab) => {
             setActiveTab(tab);
-            setIsSidebarOpen(false); // close sidebar on mobile when tab clicked
+            setIsSidebarOpen(false);
           }}
           isOpen={isSidebarOpen}
           setIsOpen={setIsSidebarOpen}
@@ -135,8 +136,8 @@ export default function AdminDashboard() {
           }
         />
 
+        {/* Content */}
         <div className="flex-1 bg-gray-100 p-4 sm:p-6 overflow-auto">
-          {/* On desktop, title is inside main content */}
           <div className="hidden sm:block bg-white shadow-md rounded-md px-6 py-4 mb-4">
             <h1 className="text-2xl font-bold text-indigo-600">
               {activeTab === 'dashboard' ? 'Admin Dashboard' : 'User Management'}
@@ -186,12 +187,8 @@ export default function AdminDashboard() {
                       >
                         <div className="font-semibold text-lg text-indigo-600">{user.username}</div>
                         <div className="text-sm text-gray-600 break-words">{user.email}</div>
-                        <div className="text-sm">
-                          ZED ID: <span className="font-medium">{user.zedId || '-'}</span>
-                        </div>
-                        <div className="text-sm">
-                          Mobile: <span className="font-medium">{user.mobile || '-'}</span>
-                        </div>
+                        <div className="text-sm">ZED ID: <span className="font-medium">{user.zedId || '-'}</span></div>
+                        <div className="text-sm">Mobile: <span className="font-medium">{user.mobile || '-'}</span></div>
                         <div className="flex justify-between items-center">
                           <label className="inline-flex relative items-center cursor-pointer">
                             <input
@@ -224,42 +221,10 @@ export default function AdminDashboard() {
           )}
         </div>
       </div>
-
-      {deleteUserId && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
-          <div className="bg-white rounded-lg shadow-lg p-6 max-w-sm w-full">
-            <h2 className="text-lg font-semibold mb-4">Confirm Delete</h2>
-            <p className="mb-6">Are you sure you want to delete this user?</p>
-            <div className="flex justify-end space-x-4">
-              <button
-                onClick={() => setDeleteUserId(null)}
-                className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  axios
-                    .delete(`/api/auth/delete-user/${deleteUserId}`, {
-                      headers: { Authorization: `Bearer ${token}` },
-                    })
-                    .then(() => {
-                      fetchUsers();
-                      setDeleteUserId(null);
-                    })
-                    .catch(() => setDeleteUserId(null));
-                }}
-                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
+
 
 
 
