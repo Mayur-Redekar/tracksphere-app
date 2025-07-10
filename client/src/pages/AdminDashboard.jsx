@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 import Sidebar from '../components/Sidebar';
 import { FaTachometerAlt, FaUsers, FaBars } from 'react-icons/fa';
+import AdminStats from '../components/AdminStats';
 
 export default function AdminDashboard() {
   const [users, setUsers] = useState([]);
@@ -11,7 +12,6 @@ export default function AdminDashboard() {
   const [animateBadge, setAnimateBadge] = useState(false);
   const [deleteUserId, setDeleteUserId] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
   const token = localStorage.getItem('token');
   const currentUser = JSON.parse(localStorage.getItem('user'));
   const audioRef = useRef(null);
@@ -21,10 +21,10 @@ export default function AdminDashboard() {
       const res = await axios.get('/api/users', {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const filteredUsers = res.data.filter((u) => u.role !== 'admin');
-      setUsers(filteredUsers);
-      const unverified = filteredUsers.filter((u) => !u.isVerified).length;
-      setNewUserCount(unverified);
+      // Exclude admins
+      const allUsers = res.data.filter((u) => u.role !== 'admin');
+      setUsers(allUsers);
+      setNewUserCount(allUsers.filter((u) => !u.isVerified).length);
     } catch (err) {
       console.error('Error fetching users:', err);
     }
@@ -32,25 +32,19 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetchUsers();
-    const eventSource = new EventSource('/api/users/events');
-
-    eventSource.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.type === 'new_user_registered') {
-          fetchUsers();
-          setAnimateBadge(true);
-          if (audioRef.current) audioRef.current.play().catch(() => {});
-          setTimeout(() => setAnimateBadge(false), 2000);
-        }
-      } catch (err) {
-        console.error('Error parsing SSE data:', err);
+    const es = new EventSource('/api/users/events');
+    es.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.type === 'new_user_registered') {
+        fetchUsers();
+        setAnimateBadge(true);
+        audioRef.current?.play().catch(() => {});
+        setTimeout(() => setAnimateBadge(false), 2000);
       }
     };
-
-    eventSource.onerror = () => eventSource.close();
-
-    return () => eventSource.close();
+    es.onerror = () => es.close();
+    return () => es.close();
+    // eslint-disable-next-line
   }, []);
 
   const handleToggleVerify = async (id, currentStatus) => {
@@ -66,39 +60,30 @@ export default function AdminDashboard() {
     }
   };
 
+  const unverifiedUsers = users.filter((u) => !u.isVerified);
+  const verifiedUsers = users.filter((u) => u.isVerified);
+
+  const filteredUsers = activeUserTab === 'verified' ? verifiedUsers : unverifiedUsers;
+
   const handleLogout = () => {
     localStorage.clear();
     window.location.href = '/login';
   };
 
-  const filteredUsers = users.filter((u) => u.isVerified === (activeUserTab === 'verified'));
-
   return (
     <div className="min-h-screen flex flex-col">
       <audio ref={audioRef} src="/sounds/bell.wav" preload="auto" />
-
-      {/* Mobile header */}
       <div className="sm:hidden bg-indigo-600 text-white flex items-center justify-between px-4 py-3">
         <div className="font-bold text-lg">
           {activeTab === 'dashboard' ? 'Admin Dashboard' : 'User Management'}
         </div>
-        <button
-          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          aria-label="Toggle menu"
-          className="focus:outline-none"
-        >
-          <FaBars size={24} />
-        </button>
+        <button onClick={() => setIsSidebarOpen(!isSidebarOpen)}><FaBars size={24} /></button>
       </div>
 
-      {/* Main layout */}
       <div className="flex flex-1 overflow-hidden">
         <Sidebar
           activeTab={activeTab}
-          setActiveTab={(tab) => {
-            setActiveTab(tab);
-            setIsSidebarOpen(false);
-          }}
+          setActiveTab={(tab) => { setActiveTab(tab); setIsSidebarOpen(false); }}
           isOpen={isSidebarOpen}
           setIsOpen={setIsSidebarOpen}
           menuItems={[
@@ -111,7 +96,7 @@ export default function AdminDashboard() {
                   Users
                   {newUserCount > 0 && (
                     <span
-                      className={`ml-2 inline-block bg-red-500 text-white text-xs font-semibold px-2 py-0.5 rounded-full transition-transform ${
+                      className={`ml-2 inline-block bg-red-500 text-white text-xs font-semibold px-2 py-0.5 rounded-full ${
                         animateBadge ? 'animate-ping' : ''
                       }`}
                       title={`${newUserCount} new unverified user(s)`}
@@ -136,7 +121,6 @@ export default function AdminDashboard() {
           }
         />
 
-        {/* Content */}
         <div className="flex-1 bg-gray-100 p-4 sm:p-6 overflow-auto">
           <div className="hidden sm:block bg-white shadow-md rounded-md px-6 py-4 mb-4">
             <h1 className="text-2xl font-bold text-indigo-600">
@@ -144,11 +128,7 @@ export default function AdminDashboard() {
             </h1>
           </div>
 
-          {activeTab === 'dashboard' && (
-            <div className="bg-white rounded-lg shadow-md p-4">
-              <p className="text-gray-700 text-sm">Welcome to the admin dashboard.</p>
-            </div>
-          )}
+          {activeTab === 'dashboard' && <AdminStats />}
 
           {activeTab === 'users' && (
             <div className="bg-white rounded-lg shadow-md p-4 space-y-4">
@@ -224,6 +204,27 @@ export default function AdminDashboard() {
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
