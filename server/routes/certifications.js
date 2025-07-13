@@ -4,8 +4,9 @@ import {
   getMyCertifications,
   updateCertificationStatus,
   getTodayCertifications,
+  getAllCertificates,
 } from '../controllers/certController.js';
-import { verifyToken } from '../middleware/authMiddleware.js';
+import { verifyToken, verifyAdmin } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
@@ -18,5 +19,7 @@ router.post('/', verifyToken, addCertification);
 
 // Update Certification Status
 router.put('/:id', verifyToken, updateCertificationStatus);
+
+router.get('/certificates', verifyToken, verifyAdmin, getAllCertificates);
 
 export default router;
