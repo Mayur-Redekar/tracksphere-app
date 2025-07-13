@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 import Sidebar from '../components/Sidebar';
-import { FaTachometerAlt, FaUsers, FaBars } from 'react-icons/fa';
+import { FaTachometerAlt, FaUsers, FaBars, FaCertificate } from 'react-icons/fa';
 import AdminStats from '../components/AdminStats';
+import AllCertificates from '../components/AllCertificates'; // New Component
 
 export default function AdminDashboard() {
   const [users, setUsers] = useState([]);
@@ -21,7 +22,6 @@ export default function AdminDashboard() {
       const res = await axios.get('/api/users', {
         headers: { Authorization: `Bearer ${token}` },
       });
-      // Exclude admins
       const allUsers = res.data.filter((u) => u.role !== 'admin');
       setUsers(allUsers);
       setNewUserCount(allUsers.filter((u) => !u.isVerified).length);
@@ -44,7 +44,6 @@ export default function AdminDashboard() {
     };
     es.onerror = () => es.close();
     return () => es.close();
-    // eslint-disable-next-line
   }, []);
 
   const handleToggleVerify = async (id, currentStatus) => {
@@ -62,7 +61,6 @@ export default function AdminDashboard() {
 
   const unverifiedUsers = users.filter((u) => !u.isVerified);
   const verifiedUsers = users.filter((u) => u.isVerified);
-
   const filteredUsers = activeUserTab === 'verified' ? verifiedUsers : unverifiedUsers;
 
   const handleLogout = () => {
@@ -75,15 +73,24 @@ export default function AdminDashboard() {
       <audio ref={audioRef} src="/sounds/bell.wav" preload="auto" />
       <div className="sm:hidden bg-indigo-600 text-white flex items-center justify-between px-4 py-3">
         <div className="font-bold text-lg">
-          {activeTab === 'dashboard' ? 'Admin Dashboard' : 'User Management'}
+          {activeTab === 'dashboard'
+            ? 'Admin Dashboard'
+            : activeTab === 'users'
+            ? 'User Management'
+            : 'All Certificates'}
         </div>
-        <button onClick={() => setIsSidebarOpen(!isSidebarOpen)}><FaBars size={24} /></button>
+        <button onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
+          <FaBars size={24} />
+        </button>
       </div>
 
       <div className="flex flex-1 overflow-hidden">
         <Sidebar
           activeTab={activeTab}
-          setActiveTab={(tab) => { setActiveTab(tab); setIsSidebarOpen(false); }}
+          setActiveTab={(tab) => {
+            setActiveTab(tab);
+            setIsSidebarOpen(false);
+          }}
           isOpen={isSidebarOpen}
           setIsOpen={setIsSidebarOpen}
           menuItems={[
@@ -107,6 +114,7 @@ export default function AdminDashboard() {
                 </div>
               ),
             },
+            { key: 'certificates', icon: FaCertificate, label: 'All Certificates' },
           ]}
           footer={
             <div className="mt-auto text-center text-white text-sm space-y-2">
@@ -124,7 +132,11 @@ export default function AdminDashboard() {
         <div className="flex-1 bg-gray-100 p-4 sm:p-6 overflow-auto">
           <div className="hidden sm:block bg-white shadow-md rounded-md px-6 py-4 mb-4">
             <h1 className="text-2xl font-bold text-indigo-600">
-              {activeTab === 'dashboard' ? 'Admin Dashboard' : 'User Management'}
+              {activeTab === 'dashboard'
+                ? 'Admin Dashboard'
+                : activeTab === 'users'
+                ? 'User Management'
+                : 'All Certificates'}
             </h1>
           </div>
 
@@ -165,10 +177,18 @@ export default function AdminDashboard() {
                         key={user._id}
                         className="bg-gray-50 rounded-lg shadow hover:shadow-md transition p-4 space-y-2"
                       >
-                        <div className="font-semibold text-lg text-indigo-600">{user.username}</div>
-                        <div className="text-sm text-gray-600 break-words">{user.email}</div>
-                        <div className="text-sm">ZED ID: <span className="font-medium">{user.zedId || '-'}</span></div>
-                        <div className="text-sm">Mobile: <span className="font-medium">{user.mobile || '-'}</span></div>
+                        <div className="font-semibold text-lg text-indigo-600">
+                          {user.username}
+                        </div>
+                        <div className="text-sm text-gray-600 break-words">
+                          {user.email}
+                        </div>
+                        <div className="text-sm">
+                          ZED ID: <span className="font-medium">{user.zedId || '-'}</span>
+                        </div>
+                        <div className="text-sm">
+                          Mobile: <span className="font-medium">{user.mobile || '-'}</span>
+                        </div>
                         <div className="flex justify-between items-center">
                           <label className="inline-flex relative items-center cursor-pointer">
                             <input
@@ -199,11 +219,14 @@ export default function AdminDashboard() {
               </div>
             </div>
           )}
+
+          {activeTab === 'certificates' && <AllCertificates />}
         </div>
       </div>
     </div>
   );
 }
+
 
 
 

@@ -65,3 +65,17 @@ export const getTodayCertifications = async (req, res) => {
   }
 };
 
+// all users for admin
+export const getAllCertificates = async (req, res) => {
+  try {
+    const certificates = await Certification.find()
+      .populate('user', 'username email') // only username & email
+      .sort({ createdAt: -1 });
+
+    res.status(200).json(certificates);
+  } catch (error) {
+    console.error('Error fetching certificates:', error);
+    res.status(500).json({ message: 'Server Error' });
+  }
+};
+
