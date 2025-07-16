@@ -23,8 +23,7 @@ const AllCertificates = () => {
   const [filtered, setFiltered] = useState([]);
   const [filters, setFilters] = useState({ username: '', month: '', date: '', status: '' });
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 50; // ✅ Set to 50
-
+  const itemsPerPage = 50;
   const token = localStorage.getItem('token');
 
   const fetchCertificates = async () => {
@@ -95,21 +94,26 @@ const AllCertificates = () => {
     }
 
     setFiltered(temp);
-    setCurrentPage(1); // Reset to first page on filter change
+    setCurrentPage(1);
   };
 
   const exportToExcel = () => {
-    const worksheet = XLSX.utils.json_to_sheet(filtered.map(c => ({
+    const currentDate = new Date();
+    const monthYear = currentDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+
+    const worksheet = XLSX.utils.json_to_sheet(filtered.map((c, index) => ({
+      'S. No': index + 1,
       Username: c.user?.username || '',
-      "Unit Name": c.unitName,
-      "ZED MSME": c.zedmsme,
+      'Unit Name': c.unitName,
+      'ZED MSME': c.zedmsme,
       Password: c.password,
       Date: new Date(c.date).toLocaleDateString(),
       Status: c.status
     })));
+
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Certificates');
-    XLSX.writeFile(workbook, 'Certificates_Report.xlsx');
+    XLSX.writeFile(workbook, `${monthYear.replace(' ', '_')}_Certificates_Report.xlsx`);
   };
 
   const exportToPDF = () => {
@@ -121,7 +125,8 @@ const AllCertificates = () => {
     doc.setFontSize(14);
     doc.text(title, 14, 16);
 
-    const tableData = filtered.map(c => [
+    const tableData = filtered.map((c, index) => [
+      index + 1,
       c.user?.username || '',
       c.unitName,
       c.zedmsme,
@@ -132,7 +137,7 @@ const AllCertificates = () => {
 
     autoTable(doc, {
       startY: 22,
-      head: [['Username', 'Unit Name', 'ZED MSME', 'Password', 'Date', 'Status']],
+      head: [['S. No', 'Username', 'Unit Name', 'ZED MSME', 'Password', 'Date', 'Status']],
       body: tableData,
       styles: { fontSize: 10 },
     });
@@ -143,7 +148,6 @@ const AllCertificates = () => {
   const usernames = [...new Set(certificates.map(c => c.user?.username).filter(Boolean))];
   const statuses = [...new Set(certificates.map(c => c.status).filter(Boolean))];
 
-  // Pagination Logic
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = filtered.slice(indexOfFirstItem, indexOfLastItem);
@@ -151,7 +155,6 @@ const AllCertificates = () => {
 
   return (
     <div className="bg-white rounded-xl shadow p-4 sm:p-6">
-      {/* Filters */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 w-full">
           <div>
@@ -197,15 +200,14 @@ const AllCertificates = () => {
         </div>
       </div>
 
-      {/* Count Summary */}
       <div className="text-sm text-gray-700 mb-3">
         Showing <span className="text-indigo-600 font-semibold">{filtered.length}</span> certificate{filtered.length !== 1 ? 's' : ''}
       </div>
 
-      {/* Desktop Table */}
       <table className="hidden sm:table w-full text-sm text-left border border-gray-200 rounded-xl overflow-hidden">
         <thead className="bg-indigo-600 text-white">
           <tr>
+            <th className="px-4 py-3">S. No</th>
             <th className="px-4 py-3">Unit Name</th>
             <th className="px-4 py-3">ZED MSME</th>
             <th className="px-4 py-3">Password</th>
@@ -217,6 +219,7 @@ const AllCertificates = () => {
         <tbody className="text-gray-700">
           {currentItems.map((cert, index) => (
             <tr key={cert._id} className={`transition hover:bg-gray-100 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
+              <td className="px-4 py-3">{indexOfFirstItem + index + 1}</td>
               <td className="px-4 py-3">{cert.unitName}</td>
               <td className="px-4 py-3">{cert.zedmsme}</td>
               <td className="px-4 py-3">{cert.password}</td>
@@ -228,9 +231,8 @@ const AllCertificates = () => {
         </tbody>
       </table>
 
-      {/* Mobile Cards */}
       <div className="sm:hidden flex flex-col gap-3">
-        {currentItems.map(cert => (
+        {currentItems.map((cert, index) => (
           <div key={cert._id} className="rounded-lg border border-gray-200 bg-gray-50 p-3 shadow-sm">
             <div className="flex justify-between items-center mb-2">
               <p className="font-semibold text-indigo-700 truncate max-w-[65%]">
@@ -260,27 +262,27 @@ const AllCertificates = () => {
           </div>
         ))}
       </div>
-      
-    {totalPages > 1 && (
-      <div className="mt-4 flex justify-center gap-1 text-sm">
-        {Array.from({ length: totalPages }, (_, i) => (
-        <button
-         key={i}
-          onClick={() => setCurrentPage(i + 1)}
-          className={`px-3 py-1 border rounded ${
-          currentPage === i + 1
-            ? 'bg-indigo-600 text-white'
-            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-        }`}
-      >
-        {i + 1}
-      </button>
-    ))}
-  </div>
-  )}
 
- </div>
+      {totalPages > 1 && (
+        <div className="mt-4 flex justify-center gap-1 text-sm">
+          {Array.from({ length: totalPages }, (_, i) => (
+            <button
+              key={i}
+              onClick={() => setCurrentPage(i + 1)}
+              className={`px-3 py-1 border rounded ${
+                currentPage === i + 1
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              {i + 1}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 };
 
 export default AllCertificates;
+

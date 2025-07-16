@@ -9,9 +9,9 @@ export default function Sidebar({ activeTab, setActiveTab, isOpen, setIsOpen, me
   return (
     <>
       <aside
-        className={`fixed md:static top-0 left-0 bg-gradient-to-b from-[#5B5F97] to-[#706fd3] text-white shadow-lg p-6 z-50 transform transition-transform duration-300 ease-in-out
+        className={`fixed md:fixed top-0 left-0 bg-gradient-to-b from-[#5B5F97] to-[#706fd3] text-white shadow-lg p-6 z-50 transform transition-transform duration-300 ease-in-out
           ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-          md:translate-x-0 md:w-64 h-screen md:h-auto flex flex-col`}
+          md:translate-x-0 md:w-64 h-screen md:h-screen flex flex-col`}
       >
         {/* Top Section */}
         <div className="flex-grow flex flex-col">
