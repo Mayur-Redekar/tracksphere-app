@@ -3,7 +3,7 @@ import axios from 'axios';
 import Sidebar from '../components/Sidebar';
 import { FaTachometerAlt, FaUsers, FaBars, FaCertificate } from 'react-icons/fa';
 import AdminStats from '../components/AdminStats';
-import AllCertificates from '../components/AllCertificates'; // New Component
+import AllCertificates from '../components/AllCertificates';
 
 export default function AdminDashboard() {
   const [users, setUsers] = useState([]);
@@ -13,6 +13,7 @@ export default function AdminDashboard() {
   const [animateBadge, setAnimateBadge] = useState(false);
   const [deleteUserId, setDeleteUserId] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false); // <-- NEW
   const token = localStorage.getItem('token');
   const currentUser = JSON.parse(localStorage.getItem('user'));
   const audioRef = useRef(null);
@@ -57,6 +58,25 @@ export default function AdminDashboard() {
     } catch (err) {
       console.error('Error verifying user:', err);
     }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteUserId) return;
+    try {
+      await axios.delete(`/api/auth/delete-user/${deleteUserId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setDeleteUserId(null);
+      setShowDeleteModal(false);
+      fetchUsers();
+    } catch (error) {
+      console.error('Error deleting user:', error);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteUserId(null);
+    setShowDeleteModal(false);
   };
 
   const unverifiedUsers = users.filter((u) => !u.isVerified);
@@ -129,7 +149,7 @@ export default function AdminDashboard() {
           }
         />
 
-        <div className="flex-1 bg-gray-100 p-4 sm:p-6 overflow-auto">
+        <div className="flex-1 bg-gray-100 p-4 sm:p-6 overflow-auto md:ml-64">
           <div className="hidden sm:block bg-white shadow-md rounded-md px-6 py-4 mb-4">
             <h1 className="text-2xl font-bold text-indigo-600">
               {activeTab === 'dashboard'
@@ -180,9 +200,7 @@ export default function AdminDashboard() {
                         <div className="font-semibold text-lg text-indigo-600">
                           {user.username}
                         </div>
-                        <div className="text-sm text-gray-600 break-words">
-                          {user.email}
-                        </div>
+                        <div className="text-sm text-gray-600 break-words">{user.email}</div>
                         <div className="text-sm">
                           ZED ID: <span className="font-medium">{user.zedId || '-'}</span>
                         </div>
@@ -206,7 +224,10 @@ export default function AdminDashboard() {
                             </div>
                           </label>
                           <button
-                            onClick={() => setDeleteUserId(user._id)}
+                            onClick={() => {
+                              setDeleteUserId(user._id);
+                              setShowDeleteModal(true);
+                            }}
                             className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 text-xs"
                           >
                             Delete
@@ -223,9 +244,35 @@ export default function AdminDashboard() {
           {activeTab === 'certificates' && <AllCertificates />}
         </div>
       </div>
+
+      {/* 💥 Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+          <div className="bg-white rounded-lg p-6 w-80">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4">Confirm Delete</h2>
+            <p className="text-sm text-gray-600 mb-4">Are you sure you want to delete this user?</p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={handleCancelDelete}
+                className="px-4 py-1 rounded bg-gray-200 hover:bg-gray-300 text-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmDelete}
+                className="px-4 py-1 rounded bg-red-500 hover:bg-red-600 text-white text-sm"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
+
 
 
 

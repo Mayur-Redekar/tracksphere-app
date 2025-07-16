@@ -7,6 +7,7 @@ import protectedRoutes from './routes/someRoute.js';
 import userRoutes from './routes/users.js';
 import profileRoutes from './routes/profile.js';
 import certificationRoutes from './routes/certifications.js';
+import adminRoutes from './routes/adminRoutes.js';
 import path from 'path';
 
 dotenv.config();
@@ -59,6 +60,7 @@ app.use('/api/protected', protectedRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/certifications', certificationRoutes);
+app.use('/api/admin-stats', adminRoutes);
 
 // Static files
 app.use('/uploads', express.static(path.resolve('uploads')));

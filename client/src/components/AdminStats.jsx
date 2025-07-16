@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import CountUp from 'react-countup';
+import axios from 'axios';
 import {
   FaUser,
   FaAward,
@@ -22,51 +23,90 @@ import {
 } from 'recharts';
 
 export default function AdminStats() {
-  const cardData = [
-    { title: 'Total Users', count: 120, icon: <FaUser className="text-blue-600" />, bg: 'bg-blue-200' },
-    { title: 'Total Certifications', count: 85, icon: <FaAward className="text-green-600" />, bg: 'bg-green-200' },
-    { title: 'Bronze Certified', count: 50, icon: <FaMedal className="text-yellow-500" />, bg: 'bg-yellow-200' },
-    { title: 'NC Raised', count: 12, icon: <FaExclamationTriangle className="text-orange-600" />, bg: 'bg-orange-200' },
-    { title: 'Rejected Certifications', count: 8, icon: <FaTimesCircle className="text-red-600" />, bg: 'bg-red-200' },
-    { title: 'This Month', count: 28, icon: <FaCalendarAlt className="text-purple-600" />, bg: 'bg-purple-200' },
-  ];
+  const [stats, setStats] = useState(null);
 
-  const pieData = [
-    { name: 'Completed', value: 400, color: '#34D399' },
-    { name: 'Pending', value: 300, color: '#FBBF24' },
-    { name: 'Rejected', value: 100, color: '#F87171' },
-  ];
+  useEffect(() => {
+    const fetchStats = async () => {
+      const token = localStorage.getItem('token');
+      try {
+        const res = await axios.get('/api/admin-stats', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setStats(res.data);
+      } catch (error) {
+        console.error('Error fetching stats:', error);
+      }
+    };
+    fetchStats();
+  }, []);
 
-  const lineData = [
-    { name: 'Jan', certifications: 30 },
-    { name: 'Feb', certifications: 50 },
-    { name: 'Mar', certifications: 80 },
-    { name: 'Apr', certifications: 60 },
-    { name: 'May', certifications: 70 },
-    { name: 'Jun', certifications: 90 },
-  ];
+  const cardData = stats
+    ? [
+        {
+          title: 'Total Users',
+          count: stats.cards.totalUsers,
+          icon: <FaUser className="text-blue-600" />,
+          bg: 'bg-blue-200',
+        },
+        {
+          title: 'Total Certifications',
+          count: stats.cards.totalCertifications,
+          icon: <FaAward className="text-green-600" />,
+          bg: 'bg-green-200',
+        },
+        {
+          title: 'Bronze Certified',
+          count: stats.cards.bronzeCertified,
+          icon: <FaMedal className="text-yellow-500" />,
+          bg: 'bg-yellow-200',
+        },
+        {
+          title: 'NC Raised',
+          count: stats.cards.ncRaised,
+          icon: <FaExclamationTriangle className="text-orange-600" />,
+          bg: 'bg-orange-200',
+        },
+        {
+          title: 'Rejected Certifications',
+          count: stats.cards.rejectedCertifications,
+          icon: <FaTimesCircle className="text-red-600" />,
+          bg: 'bg-red-200',
+        },
+        {
+          title: 'This Month',
+          count: stats.cards.thisMonth,
+          icon: <FaCalendarAlt className="text-purple-600" />,
+          bg: 'bg-purple-200',
+        },
+      ]
+    : [];
 
-  const userCertifications = [
-    { name: 'Alice Parkar', bc: 5, nc: 3, rc: 1 },
-    { name: 'Bob', bc: 8, nc: 1, rc: 2 },
-    { name: 'Charlie', bc: 6, nc: 4, rc: 3 },
-    { name: 'David', bc: 4, nc: 2, rc: 5 },
-    { name: 'Eva', bc: 60, nc: 0, rc: 1 },
-    { name: 'John', bc: 10, nc: 2, rc: 3 },
-    { name: 'Lisa', bc: 7, nc: 1, rc: 1 },
-  ];
+  const pieData = stats
+    ? [
+        {
+          name: 'Completed',
+          value: stats.pieChart.completed,
+          color: '#34D399',
+        },
+        {
+          name: 'Pending',
+          value: stats.pieChart.pending,
+          color: '#FBBF24',
+        },
+        {
+          name: 'Rejected',
+          value: stats.pieChart.rejected,
+          color: '#F87171',
+        },
+      ]
+    : [];
 
-  const topUsers = [
-    { name: 'Eva', certifications: 28, avatar: 'https://i.pravatar.cc/40?img=1' },
-    { name: 'John', certifications: 22, avatar: 'https://i.pravatar.cc/40?img=2' },
-    { name: 'Alice', certifications: 18, avatar: 'https://i.pravatar.cc/40?img=3' },
-    { name: 'Charlie', certifications: 15, avatar: 'https://i.pravatar.cc/40?img=4' },
-    { name: 'David', certifications: 12, avatar: 'https://i.pravatar.cc/40?img=5' },
-  ];
+  const lineData = stats?.lineChart || [];
+  const userCertifications = stats?.userCertOverview || [];
+  const topUsers = stats?.topUsers || [];
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto px-4">
-      {/* Cards */}
       <div className="bg-white rounded-xl shadow-md p-4">
         <div className="flex flex-wrap justify-between gap-3">
           {cardData.map((card, index) => (
@@ -77,23 +117,29 @@ export default function AdminStats() {
               <div className="text-2xl">{card.icon}</div>
               <div>
                 <p className="text-xs text-gray-700 mb-0.5">{card.title}</p>
-                <p className="text-xl font-bold text-gray-900">{card.count}</p>
+                <p className="text-xl font-bold text-gray-900">
+                  <CountUp end={card.count} duration={1.5} />
+                </p>
               </div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Certifications Overview & Charts */}
       <div className="flex flex-col lg:flex-row gap-4">
-        {/* User Certifications Overview */}
         <div className="bg-white rounded-xl shadow-md p-4 flex-1">
           <h2 className="text-lg font-semibold text-gray-700 mb-3">User Certifications Overview</h2>
 
           <div className="flex gap-4 text-sm mb-3 flex-wrap">
-            <div className="flex items-center gap-1"><div className="w-3 h-3 bg-green-400"></div> Bronze Certified</div>
-            <div className="flex items-center gap-1"><div className="w-3 h-3 bg-orange-400"></div> NC Raised</div>
-            <div className="flex items-center gap-1"><div className="w-3 h-3 bg-red-400"></div> Rejected Certifications</div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 bg-green-400"></div> Bronze Certified
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 bg-orange-400"></div> NC Raised
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 bg-red-400"></div> Rejected Certifications
+            </div>
           </div>
 
           <div
@@ -105,24 +151,34 @@ export default function AdminStats() {
             }}
           >
             <style>{`div::-webkit-scrollbar { display: none; }`}</style>
-
             {userCertifications.map((user, index) => (
               <div
                 key={index}
                 className="flex flex-wrap items-center text-sm bg-gray-50 p-2 rounded hover:scale-[1.02] transition-all duration-200"
               >
-                <div className="font-medium text-gray-700 w-[60px] truncate mb-1 sm:mb-0">{user.name}</div>
+                <div className="font-medium text-gray-700 w-[60px] truncate mb-1 sm:mb-0">
+                  {user.name}
+                </div>
                 <div className="flex flex-col flex-1 ml-0 sm:ml-2 gap-1">
                   <div className="flex items-center gap-2">
-                    <div className="h-[4px] bg-green-400 rounded" style={{ width: `${Math.min(user.bc * 10, 200)}px` }} />
+                    <div
+                      className="h-[4px] bg-green-400 rounded"
+                      style={{ width: `${Math.min(user.bc * 10, 200)}px` }}
+                    />
                     <span className="text-xs">{user.bc}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="h-[4px] bg-orange-400 rounded" style={{ width: `${Math.min(user.nc * 10, 200)}px` }} />
+                    <div
+                      className="h-[4px] bg-orange-400 rounded"
+                      style={{ width: `${Math.min(user.nc * 10, 200)}px` }}
+                    />
                     <span className="text-xs">{user.nc}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="h-[4px] bg-red-400 rounded" style={{ width: `${Math.min(user.rc * 10, 200)}px` }} />
+                    <div
+                      className="h-[4px] bg-red-400 rounded"
+                      style={{ width: `${Math.min(user.rc * 10, 200)}px` }}
+                    />
                     <span className="text-xs">{user.rc}</span>
                   </div>
                 </div>
@@ -131,25 +187,62 @@ export default function AdminStats() {
           </div>
         </div>
 
-        {/* Charts */}
         <div className="flex flex-col gap-4 flex-1">
           <div className="bg-white rounded-xl shadow-md p-4 h-[250px]">
             <h2 className="text-lg font-semibold text-gray-700 mb-3">Certification Status</h2>
             <ResponsiveContainer width="100%" height="80%">
               <PieChart>
-                <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={60} label>
+                <Pie
+                  data={pieData}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={50}
+                  outerRadius={80}
+                  paddingAngle={4}
+                  isAnimationActive={true}
+                  animationDuration={1000}
+                  animationEasing="ease-in-out"
+                  label={({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
+                    const radius = innerRadius + (outerRadius - innerRadius) / 2;
+                    const RADIAN = Math.PI / 180;
+                    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                    return (
+                      <text
+                        x={x}
+                        y={y}
+                        fill="#fff"
+                        textAnchor="middle"
+                        dominantBaseline="central"
+                        fontSize={12}
+                        fontWeight="bold"
+                      >
+                        {(percent * 100).toFixed(0)}%
+                      </text>
+                    );
+                  }}
+                  labelLine={false}
+                >
                   {pieData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip />
+                <Tooltip
+                  contentStyle={{
+                    borderRadius: '8px',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                  }}
+                  formatter={(value, name) => [`${value}`, name]}
+                />
               </PieChart>
             </ResponsiveContainer>
           </div>
 
           <div className="bg-white rounded-xl shadow-md p-4 h-[250px]">
             <h2 className="text-lg font-semibold text-gray-700 mb-3">Monthly Certifications Trend</h2>
-            <ResponsiveContainer width="100%" height="85%">
+            <ResponsiveContainer width="105%" height="85%" className={'ml-[-35px]'}>
               <LineChart data={lineData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
@@ -170,7 +263,6 @@ export default function AdminStats() {
         </div>
       </div>
 
-      {/* Top 5 Active Users Leaderboard */}
       <div className="bg-white rounded-xl shadow-md p-4">
         <h2 className="text-lg font-semibold text-gray-700 mb-3">Top 5 Active Users (This Month)</h2>
         <div className="space-y-3">
@@ -181,7 +273,7 @@ export default function AdminStats() {
             >
               <div className="flex items-center gap-3">
                 <span className="text-lg font-bold text-gray-600">{index + 1}</span>
-                <img src={user.avatar} alt={user.name} className="w-8 h-8 rounded-full" />
+                <FaUser className="w-8 h-8 text-gray-500" />
                 <span className="font-medium text-gray-800">{user.name}</span>
               </div>
               <div className="font-semibold text-indigo-600">
