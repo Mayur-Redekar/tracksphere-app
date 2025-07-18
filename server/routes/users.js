@@ -1,6 +1,7 @@
 import express from 'express';
 import User from '../models/User.js';
 import { verifyToken } from '../middleware/authMiddleware.js';
+import { getUserDashboardStats } from '../controllers/userController.js';
 
 const router = express.Router();
 
@@ -22,4 +23,9 @@ router.get('/unverified', verifyToken, async (req, res) => {
   }
 });
 
+router.get('/dashboard-stats', verifyToken, getUserDashboardStats);
+
+
 export default router;
+
+
