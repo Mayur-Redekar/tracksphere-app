@@ -7,6 +7,62 @@ dotenv.config();
 const JWT_SECRET = process.env.JWT_SECRET;
 const CLIENT_URL = process.env.FRONTEND_URL;
 
+// const colorOptions = [
+//   '#e6194b', '#3cb44b', '#ffe119', '#4363d8',
+//   '#f58231', '#911eb4', '#46f0f0', '#f032e6',
+// ];
+
+// // User Registration
+// export const register = async (req, res) => {
+//   try {
+//     const { username, email, password } = req.body;
+//     const cleanEmail = email.trim().toLowerCase();
+
+//     const existing = await User.findOne({ email: cleanEmail });
+//     if (existing) return res.status(400).json({ msg: 'User already exists' });
+
+//     const usedColors = (await User.find({})).map((u) => u.color);
+//     const availableColors = colorOptions.filter((c) => !usedColors.includes(c));
+//     const color = availableColors[Math.floor(Math.random() * availableColors.length)];
+//     if (!color) return res.status(400).json({ msg: 'No colors left' });
+
+//     const hashedPassword = await bcrypt.hash(password, 10);
+//     const newUser = new User({
+//       username,
+//       email: cleanEmail,
+//       password: hashedPassword,
+//       color,
+//       role: 'user',
+//       isVerified: false, // Admin verifies manually
+//     });
+
+//     await newUser.save();
+
+//     // Send SSE notification to all connected clients
+//     const clients = req.app.get('sseClients') || [];
+//     const message = JSON.stringify({
+//       type: 'new_user_registered',
+//       user: {
+//         id: newUser._id,
+//         username: newUser.username,
+//         email: newUser.email,
+//         isVerified: false,
+//       },
+//     });
+
+//     clients.forEach(client => {
+//       client.write(`data: ${message}\n\n`);
+//     });
+
+//     res.status(201).json({ msg: 'Registration successful. Awaiting admin verification.' });
+//   } catch (err) {
+//     console.error('Register error:', err.message);
+//     res.status(500).json({ msg: 'Server error during registration' });
+//   }
+// };
+
+// Login only if verified
+
 const colorOptions = [
   '#e6194b', '#3cb44b', '#ffe119', '#4363d8',
   '#f58231', '#911eb4', '#46f0f0', '#f032e6',
@@ -23,8 +79,32 @@ export const register = async (req, res) => {
 
     const usedColors = (await User.find({})).map((u) => u.color);
     const availableColors = colorOptions.filter((c) => !usedColors.includes(c));
-    const color = availableColors[Math.floor(Math.random() * availableColors.length)];
-    if (!color) return res.status(400).json({ msg: 'No colors left' });
+
+    let color;
+
+    if (availableColors.length > 0) {
+      // Use an available predefined color
+      color = availableColors[Math.floor(Math.random() * availableColors.length)];
+    } else {
+      // Generate a new random hex color (unique)
+      const generateRandomHexColor = () => {
+        const letters = '0123456789ABCDEF';
+        let hex = '#';
+        for (let i = 0; i < 6; i++) {
+          hex += letters[Math.floor(Math.random() * 16)];
+        }
+        return hex;
+      };
+
+      let newColor;
+      let attempts = 0;
+      do {
+        newColor = generateRandomHexColor();
+        attempts++;
+      } while (usedColors.includes(newColor) && attempts < 100);
+
+      color = newColor;
+    }
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = new User({
@@ -61,7 +141,7 @@ export const register = async (req, res) => {
   }
 };
 
-// Login only if verified
+
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;

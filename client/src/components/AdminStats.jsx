@@ -107,6 +107,20 @@ export default function AdminStats() {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto px-4">
+      {/* Style fixes for click border & mobile tooltips */}
+      <style>
+        {`
+          svg:focus {
+            outline: none;
+          }
+          @media (max-width: 768px) {
+            .recharts-tooltip-wrapper {
+              pointer-events: all !important;
+            }
+          }
+        `}
+      </style>
+
       <div className="bg-white rounded-xl shadow-md p-4">
         <div className="flex flex-wrap justify-between gap-3">
           {cardData.map((card, index) => (
@@ -230,6 +244,8 @@ export default function AdminStats() {
                   ))}
                 </Pie>
                 <Tooltip
+                  cursor={{ fill: 'transparent' }}
+                  wrapperStyle={{ pointerEvents: 'auto' }}
                   contentStyle={{
                     borderRadius: '8px',
                     boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
@@ -242,12 +258,15 @@ export default function AdminStats() {
 
           <div className="bg-white rounded-xl shadow-md p-4 h-[250px]">
             <h2 className="text-lg font-semibold text-gray-700 mb-3">Monthly Certifications Trend</h2>
-            <ResponsiveContainer width="105%" height="85%" className={'ml-[-35px]'}>
+            <ResponsiveContainer width="105%" height="85%" className={"ml-[-35px]"}>
               <LineChart data={lineData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
                 <YAxis />
-                <Tooltip />
+                <Tooltip
+                  cursor={{ stroke: 'rgba(0,0,0,0.1)', strokeWidth: 1 }}
+                  wrapperStyle={{ pointerEvents: 'auto' }}
+                />
                 <Line
                   type="monotone"
                   dataKey="certifications"
@@ -286,3 +305,4 @@ export default function AdminStats() {
     </div>
   );
 }
+
