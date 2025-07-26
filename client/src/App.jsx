@@ -10,32 +10,34 @@ const Login = lazy(() => import('./pages/Login'));
 const Register = lazy(() => import('./pages/Register'));
 const UserDashboard = lazy(() => import('./pages/UserDashboard'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const LandingWrapper = lazy(() => import('./pages/LandingWrapper')); // ✅ Updated here
 
 export default function App() {
   return (
     <ErrorBoundary>
       <Suspense fallback={<div className="text-center mt-10 text-indigo-600 font-semibold">Loading...</div>}>
         <Routes>
-          <Route path="/" element={<Navigate to="/login" />} />
+          {/* Show LandingWrapper (with loader) at root */}
+          <Route path="/" element={<LandingWrapper />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
 
-          {/* ✅ Protected User Dashboard */}
+          {/* Protected User Dashboard */}
           <Route element={<ProtectedRoute role="user" />}>
             <Route path="/dashboard/:username" element={<UserDashboard />} />
           </Route>
 
-          {/* ✅ Protected Admin Dashboard */}
+          {/* Protected Admin Dashboard */}
           <Route element={<ProtectedRoute role="admin" />}>
             <Route path="/admin-dashboard" element={<AdminDashboard />} />
           </Route>
 
           {/* Catch-all route */}
-          <Route path="*" element={<Navigate to="/login" />} />
+          <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </Suspense>
 
-      {/* ✅ Global Toast Messages */}
+      {/* Global Toast Messages */}
       <ToastContainer
         position="top-right"
         autoClose={2000}
@@ -51,4 +53,3 @@ export default function App() {
     </ErrorBoundary>
   );
 }
-

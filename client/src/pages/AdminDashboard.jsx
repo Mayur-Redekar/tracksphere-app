@@ -1,9 +1,10 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, Suspense, lazy } from 'react';
 import axios from 'axios';
-import Sidebar from '../components/Sidebar';
 import { FaTachometerAlt, FaUsers, FaBars, FaCertificate } from 'react-icons/fa';
-import AdminStats from '../components/AdminStats';
-import AllCertificates from '../components/AllCertificates';
+
+const Sidebar = lazy(() => import('../components/Sidebar'));
+const AdminStats = lazy(() => import('../components/AdminStats'));
+const AllCertificates = lazy(() => import('../components/AllCertificates'));
 
 export default function AdminDashboard() {
   const [users, setUsers] = useState([]);
@@ -13,7 +14,7 @@ export default function AdminDashboard() {
   const [animateBadge, setAnimateBadge] = useState(false);
   const [deleteUserId, setDeleteUserId] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false); // <-- NEW
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const token = localStorage.getItem('token');
   const currentUser = JSON.parse(localStorage.getItem('user'));
   const audioRef = useRef(null);
@@ -105,49 +106,51 @@ export default function AdminDashboard() {
       </div>
 
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar
-          activeTab={activeTab}
-          setActiveTab={(tab) => {
-            setActiveTab(tab);
-            setIsSidebarOpen(false);
-          }}
-          isOpen={isSidebarOpen}
-          setIsOpen={setIsSidebarOpen}
-          menuItems={[
-            { key: 'dashboard', icon: FaTachometerAlt, label: 'Dashboard' },
-            {
-              key: 'users',
-              icon: FaUsers,
-              label: (
-                <div className="relative flex items-center">
-                  Users
-                  {newUserCount > 0 && (
-                    <span
-                      className={`ml-2 inline-block bg-red-500 text-white text-xs font-semibold px-2 py-0.5 rounded-full ${
-                        animateBadge ? 'animate-ping' : ''
-                      }`}
-                      title={`${newUserCount} new unverified user(s)`}
-                    >
-                      {newUserCount}
-                    </span>
-                  )}
-                </div>
-              ),
-            },
-            { key: 'certificates', icon: FaCertificate, label: 'All Certificates' },
-          ]}
-          footer={
-            <div className="mt-auto text-center text-white text-sm space-y-2">
-              <p className="break-all px-2">{currentUser?.email}</p>
-              <button
-                onClick={handleLogout}
-                className="bg-red-500 px-3 py-1 rounded hover:bg-red-600 text-sm"
-              >
-                Logout
-              </button>
-            </div>
-          }
-        />
+        <Suspense fallback={<div className="text-center p-4">Loading Sidebar...</div>}>
+          <Sidebar
+            activeTab={activeTab}
+            setActiveTab={(tab) => {
+              setActiveTab(tab);
+              setIsSidebarOpen(false);
+            }}
+            isOpen={isSidebarOpen}
+            setIsOpen={setIsSidebarOpen}
+            menuItems={[
+              { key: 'dashboard', icon: FaTachometerAlt, label: 'Dashboard' },
+              {
+                key: 'users',
+                icon: FaUsers,
+                label: (
+                  <div className="relative flex items-center">
+                    Users
+                    {newUserCount > 0 && (
+                      <span
+                        className={`ml-2 inline-block bg-red-500 text-white text-xs font-semibold px-2 py-0.5 rounded-full ${
+                          animateBadge ? 'animate-ping' : ''
+                        }`}
+                        title={`${newUserCount} new unverified user(s)`}
+                      >
+                        {newUserCount}
+                      </span>
+                    )}
+                  </div>
+                ),
+              },
+              { key: 'certificates', icon: FaCertificate, label: 'All Certificates' },
+            ]}
+            footer={
+              <div className="mt-auto text-center text-white text-sm space-y-2">
+                <p className="break-all px-2">{currentUser?.email}</p>
+                <button
+                  onClick={handleLogout}
+                  className="bg-red-500 px-3 py-1 rounded hover:bg-red-600 text-sm"
+                >
+                  Logout
+                </button>
+              </div>
+            }
+          />
+        </Suspense>
 
         <div className="flex-1 bg-gray-100 p-4 sm:p-6 overflow-auto md:ml-64">
           <div className="hidden sm:block bg-white shadow-md rounded-md px-6 py-4 mb-4">
@@ -160,7 +163,11 @@ export default function AdminDashboard() {
             </h1>
           </div>
 
-          {activeTab === 'dashboard' && <AdminStats />}
+          {activeTab === 'dashboard' && (
+            <Suspense fallback={<div className="text-center p-4">Loading Admin Stats...</div>}>
+              <AdminStats />
+            </Suspense>
+          )}
 
           {activeTab === 'users' && (
             <div className="bg-white rounded-lg shadow-md p-4 space-y-4">
@@ -241,11 +248,14 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {activeTab === 'certificates' && <AllCertificates />}
+          {activeTab === 'certificates' && (
+            <Suspense fallback={<div className="text-center p-4">Loading Certificates...</div>}>
+              <AllCertificates />
+            </Suspense>
+          )}
         </div>
       </div>
 
-      {/* 💥 Delete Confirmation Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
           <div className="bg-white rounded-lg p-6 w-80">
@@ -271,6 +281,7 @@ export default function AdminDashboard() {
     </div>
   );
 }
+
 
 
 

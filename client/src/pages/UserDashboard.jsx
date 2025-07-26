@@ -1,13 +1,14 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiUser } from 'react-icons/fi';
 import { FaBars, FaTachometerAlt, FaWpforms, FaClipboardList } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
-import UserProfilePanel from '../components/UserProfilePanel';
-import Sidebar from '../components/Sidebar';
-import CertificationForm from '../components/CertificationForm';
-import CertificationList from '../components/CertificationList';
-import Dashboard from '../components/Dashboard';
+
+const Sidebar = lazy(() => import('../components/Sidebar'));
+const UserProfilePanel = lazy(() => import('../components/UserProfilePanel'));
+const CertificationForm = lazy(() => import('../components/CertificationForm'));
+const CertificationList = lazy(() => import('../components/CertificationList'));
+const Dashboard = lazy(() => import('../components/Dashboard'));
 
 export default function UserDashboard() {
   const token = localStorage.getItem('token');
@@ -97,10 +98,7 @@ export default function UserDashboard() {
           </div>
 
           <div className="flex items-center bg-white shadow-md rounded-md px-4 py-3 w-full">
-            <button
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="mr-3 text-indigo-600"
-            >
+            <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="mr-3 text-indigo-600">
               <FaBars size={20} />
             </button>
             <h1 className="text-lg font-bold text-[#344767]">{tabTitles[activeTab]}</h1>
@@ -112,13 +110,15 @@ export default function UserDashboard() {
 
       {/* Main Content */}
       <div className="flex">
-        <Sidebar
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          isOpen={isSidebarOpen}
-          setIsOpen={setIsSidebarOpen}
-          menuItems={userMenuItems}
-        />
+        <Suspense fallback={<div className="p-4">Loading Sidebar...</div>}>
+          <Sidebar
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            isOpen={isSidebarOpen}
+            setIsOpen={setIsSidebarOpen}
+            menuItems={userMenuItems}
+          />
+        </Suspense>
 
         <div
           className={`flex-1 bg-[#fafafa] overflow-auto transition-all duration-300 ${
@@ -126,9 +126,21 @@ export default function UserDashboard() {
           } md:ml-64`}
         >
           <main className="p-4">
-            {activeTab === 'dashboard' && <Dashboard />}
-            {activeTab === 'form' && <CertificationForm />}
-            {activeTab === 'list' && <CertificationList />}
+            {activeTab === 'dashboard' && (
+              <Suspense fallback={<div className="text-center p-4">Loading Dashboard...</div>}>
+                <Dashboard />
+              </Suspense>
+            )}
+            {activeTab === 'form' && (
+              <Suspense fallback={<div className="text-center p-4">Loading Form...</div>}>
+                <CertificationForm />
+              </Suspense>
+            )}
+            {activeTab === 'list' && (
+              <Suspense fallback={<div className="text-center p-4">Loading List...</div>}>
+                <CertificationList />
+              </Suspense>
+            )}
           </main>
         </div>
       </div>
@@ -136,19 +148,22 @@ export default function UserDashboard() {
       {/* Profile Panel */}
       <AnimatePresence>
         {showProfile && (
-          <div ref={contentRef} className="absolute top-20 right-6 z-50">
-            <UserProfilePanel
-              user={storedUser}
-              token={token}
-              onClose={() => setShowProfile(false)}
-              handleLogout={handleLogout}
-            />
-          </div>
+          <Suspense fallback={<div className="absolute top-20 right-6 z-50">Loading Profile...</div>}>
+            <div ref={contentRef} className="absolute top-20 right-6 z-50">
+              <UserProfilePanel
+                user={storedUser}
+                token={token}
+                onClose={() => setShowProfile(false)}
+                handleLogout={handleLogout}
+              />
+            </div>
+          </Suspense>
         )}
       </AnimatePresence>
     </div>
   );
 }
+
 
 
 

@@ -1,12 +1,9 @@
-import fs from 'fs';
-import path from 'path';
 import User from '../models/User.js';
 import bcrypt from 'bcrypt';
 import moment from 'moment';
 import Certification from '../models/Certification.js'; 
+import cloudinary from '../utils/cloudinary.js';
 
-
-// Update user profile 
 export const updateUserProfile = async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
@@ -14,24 +11,22 @@ export const updateUserProfile = async (req, res) => {
 
     const { username, email, zedId, mobile } = req.body;
 
-    // Handle old profile image deletion
-    if (req.file && user.profilePic) {
-      const oldImagePath = path.join('uploads', path.basename(user.profilePic));
-      if (fs.existsSync(oldImagePath)) {
-        fs.unlinkSync(oldImagePath);
+    // ✅ Delete previous Cloudinary image if new one is uploaded
+    if (req.file && req.file.path) {
+      if (user.profilePic) {
+        const publicId = user.profilePic
+          .split('/')
+          .slice(-1)[0]
+          .split('.')[0];
+        await cloudinary.uploader.destroy(`profile_pics/${publicId}`);
       }
+      user.profilePic = req.file.path;
     }
 
-    // Update user details
     user.username = username || user.username;
     user.email = email || user.email;
     user.zedId = zedId || user.zedId;
     user.mobile = mobile || user.mobile;
-
-    // New profile picture path
-    if (req.file) {
-      user.profilePic = `/uploads/${req.file.filename}`;
-    }
 
     const updatedUser = await user.save();
     res.json({ user: updatedUser });
@@ -41,7 +36,6 @@ export const updateUserProfile = async (req, res) => {
   }
 };
 
-// Password update logic
 export const updatePassword = async (req, res) => {
   try {
     const { id } = req.params;
