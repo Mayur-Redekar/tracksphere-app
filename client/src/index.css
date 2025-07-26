@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Anton&display=swap');
 @import "tailwindcss";
 
 ::-webkit-scrollbar {
@@ -8,3 +9,53 @@
 .recharts-surface:focus {
   outline: none !important;
 }
+
+@keyframes unblurLetter {
+  0% { opacity: 0; filter: blur(5px); transform: scale(1.2); }
+  50% { opacity: 0.6; filter: blur(3px); }
+  100% { opacity: 1; filter: blur(0); transform: scale(1); }
+}
+.blur-letter {
+  display: inline-block;
+  opacity: 0;
+  animation: unblurLetter 0.8s ease-out forwards;
+  font-family: 'Anton', sans-serif;
+  letter-spacing: 0.1em;
+}
+
+/* Subtitle word-by-word */
+@keyframes blurInWord {
+  0% { opacity: 0; filter: blur(5px); transform: translateY(8px) scale(1.05); }
+  100% { opacity: 1; filter: blur(0); transform: translateY(0) scale(1); }
+}
+.subtitle-word {
+  display: inline-block;
+  opacity: 0;
+  animation: blurInWord 0.8s ease-out forwards;
+}
+
+@keyframes altSubtitleAnim {
+  0% { opacity: 0; transform: translateY(10px); text-shadow: none; }
+  100% { opacity: 1; transform: translateY(0); text-shadow: 0 0 8px #818cf8; }
+}
+.alt-subtitle-anim {
+  animation: altSubtitleAnim 1.2s ease-out forwards;
+  opacity: 0;
+}
+
+/* Button entrance */
+@keyframes fadeInUp {
+  0% { transform: translateY(15px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+.animate-button {
+  animation: fadeInUp 1s ease-out 6s forwards;
+  opacity: 0;
+}
+
+/* Utility */
+.transition-opacity { transition-property: opacity; }
+.duration-500 { transition-duration: 500ms; }
+.ease-in-out { transition-timing-function: ease-in-out; }
+.opacity-0 { opacity: 0 !important; }
+.opacity-100 { opacity: 1 !important; }

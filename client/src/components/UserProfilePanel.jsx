@@ -21,7 +21,6 @@ export default function UserProfilePanel({ user, token, onClose, handleLogout })
 
   const panelRef = useRef();
 
-  // Fetch profile data on mount
   useEffect(() => {
     if (user && token) {
       axios
@@ -39,8 +38,10 @@ export default function UserProfilePanel({ user, token, onClose, handleLogout })
           };
           setUserData(loadedData);
           setOriginalData(loadedData);
+
+          // ✅ Show full Cloudinary URL without prefixing
           if (profile.profilePic) {
-            setPreview(`${import.meta.env.VITE_BACKEND_URL}${profile.profilePic}`);
+            setPreview(profile.profilePic);
           }
         })
         .catch(() => toast.error('Failed to load profile'));
@@ -77,6 +78,7 @@ export default function UserProfilePanel({ user, token, onClose, handleLogout })
       formData.append('email', userData.email);
       formData.append('zedId', userData.zedId);
       formData.append('mobile', userData.mobile);
+
       if (userData.profilePic instanceof File) {
         formData.append('profilePic', userData.profilePic);
       }
@@ -98,9 +100,12 @@ export default function UserProfilePanel({ user, token, onClose, handleLogout })
         profilePic: updated.profilePic,
       });
       setIsDirty(false);
+
+      // ✅ Cloudinary image is already a URL
       if (updated.profilePic) {
-        setPreview(`${import.meta.env.VITE_BACKEND_URL}${updated.profilePic}`);
+        setPreview(updated.profilePic);
       }
+
       toast.success('Profile updated!');
     } catch {
       toast.error('Profile update failed.');
@@ -224,3 +229,5 @@ export default function UserProfilePanel({ user, token, onClose, handleLogout })
     </motion.div>
   );
 }
+
+
